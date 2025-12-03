@@ -13,3 +13,13 @@ html.dark {
 .borderBlack {
   @apply border border-black/10;
 }
+
+/* Custom styles for black cards */
+.bg-black-card {
+  @apply bg-black text-white;
+}
+
+/* Green checkmark styles */
+.checkmark-green {
+  @apply text-green-600;
+}
