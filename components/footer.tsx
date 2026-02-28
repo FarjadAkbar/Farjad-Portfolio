@@ -110,15 +110,6 @@ export default function Footer() {
               >
                 <FaGithubSquare className="w-5 h-5" />
               </a>
-              <a
-                href="https://instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-gray-400 hover:text-orange-500 transition"
-                aria-label="Instagram"
-              >
-                <BsInstagram className="w-5 h-5" />
-              </a>
             </div>
           </div>
         </div>

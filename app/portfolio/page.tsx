@@ -11,121 +11,36 @@ import BookingModal from "@/components/booking-modal";
 export default function PortfolioPage() {
   const [activeFilter, setActiveFilter] = useState("All");
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
-  
-  const categories = ["All", "Technology", "Education", "Healthcare"];
-  
-  const filteredProjects = activeFilter === "All" 
-    ? projectsData 
-    : projectsData.filter(project => project.category === activeFilter);
+
+  const categories = ["All", "Technology", "Healthcare"];
+
+  const filteredProjects =
+    activeFilter === "All"
+      ? projectsData
+      : projectsData.filter((project) => project.category === activeFilter);
 
   return (
-    <main className="pt-32 pb-20 px-4">
-      <div className="max-w-7xl mx-auto">
-        {/* Hero Section with Stats */}
-        <div className="relative mb-16 overflow-hidden">
-          {/* Background Pattern */}
-          <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 0 }}>
-            {/* Grid Pattern Layer */}
-            <div
-              className="absolute inset-0 w-full h-full"
-              style={{
-                backgroundImage: `linear-gradient(to right, rgba(180, 180, 180, 0.2) 1px, transparent 1px), linear-gradient(rgba(180, 180, 180, 0.2) 1px, transparent 1px)`,
-                backgroundSize: "30px 30px",
-                backgroundPosition: "center center",
-              }}
-            ></div>
-            
-            {/* Pattern Image Layer */}
-            <div
-              className="absolute inset-0 w-full h-full opacity-40"
-              style={{
-                backgroundImage: `url('/pattren.png')`,
-                backgroundSize: "30px 30px",
-                backgroundPosition: "center center",
-                backgroundRepeat: "repeat",
-              }}
-            ></div>
-            
-            {/* Radial Gradient Overlay for Content Highlight */}
-            <div
-              className="absolute inset-0 w-full h-full"
-              style={{
-                background: `radial-gradient(70% 70% at center, transparent 0%, transparent 10%, rgba(255, 255, 255, 0.14) 25%, rgba(255, 255, 255, 0.333) 40%, rgba(255, 255, 255, 0.57) 60%, rgba(255, 255, 255, 0.808) 80%, rgba(255, 255, 255, 0.95) 100%)`,
-              }}
-            ></div>
-          </div>
+    <main className="pt-28 pb-20 px-4 sm:px-6">
+      <div className="max-w-6xl mx-auto">
+        {/* Hero */}
+        <header className="text-center mb-14">
+          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-3">
+            Portfolio
+          </h1>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Full-stack applications, microservices, and dashboards — from pharma operations and AI agents to marketplaces and fintech.
+          </p>
+        </header>
 
-          <div className="relative grid md:grid-cols-2 gap-12 items-center" style={{ zIndex: 1 }}>
-            <div>
-              <div className="flex items-center gap-4 mb-6">
-                <div className="flex items-center gap-2">
-                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-                    <span className="text-2xl">📊</span>
-                  </div>
-                  <div>
-                    <p className="text-3xl font-bold text-gray-900">6+</p>
-                    <p className="text-sm text-gray-600">Successful Projects</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-                    <span className="text-2xl">🌍</span>
-                  </div>
-                  <div>
-                    <p className="text-3xl font-bold text-gray-900">5+</p>
-                    <p className="text-sm text-gray-600">Countries</p>
-                  </div>
-                </div>
-              </div>
-              <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-4">
-                My Work That
-                <br />
-                <span className="text-orange-600">Generates Real Results</span>
-              </h1>
-              <p className="text-xl text-gray-600 mb-6">
-                AI-powered websites and intelligent dashboards that transform businesses across technology, education, and beyond
-              </p>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-                    <span className="text-2xl">📈</span>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-gray-900">200%</p>
-                    <p className="text-sm text-gray-600">Avg. Growth</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-                    <span className="text-2xl">💻</span>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-gray-900">100%</p>
-                    <p className="text-sm text-gray-600">Tech Focus</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="relative h-96 bg-gray-100 rounded-2xl overflow-hidden">
-              <Image 
-                src="https://picsum.photos/id/20/800/600" 
-                alt="Portfolio Showcase" 
-                fill
-                className="object-cover"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Filter Buttons */}
-        <div className="flex flex-wrap gap-4 mb-12 justify-center">
+        {/* Filters */}
+        <div className="flex flex-wrap gap-2 sm:gap-3 justify-center mb-10">
           {categories.map((category) => (
             <button
               key={category}
               onClick={() => setActiveFilter(category)}
-              className={`px-6 py-3 rounded-full font-semibold transition ${
+              className={`px-5 py-2.5 rounded-full text-sm font-semibold transition ${
                 activeFilter === category
-                  ? "bg-orange-600 text-white shadow-lg"
+                  ? "bg-orange-600 text-white shadow-md"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
             >
@@ -134,72 +49,67 @@ export default function PortfolioPage() {
           ))}
         </div>
 
-        {/* Projects Grid */}
-        <div className="grid md:grid-cols-2 gap-8 mb-16">
+        {/* Projects grid — aligned cards, same structure */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-16">
           {filteredProjects.map((project, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
+            <motion.article
+              key={project.slug}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
+              transition={{ duration: 0.35, delay: index * 0.06 }}
+              className="flex flex-col"
             >
               <Link
-                href={`/portfolio/${project.title.toLowerCase().replace(/\s+/g, "-")}`}
-                className="block bg-white border-2 border-gray-200 rounded-xl overflow-hidden hover:border-orange-300 hover:shadow-xl transition group"
+                href={`/portfolio/${project.slug}`}
+                className="flex flex-col h-full bg-white border border-gray-200 rounded-xl overflow-hidden hover:border-orange-300 hover:shadow-lg transition-all duration-200 group"
               >
-                {/* Project Image */}
-                <div className="relative h-64 bg-gray-100 overflow-hidden">
+                <div className="relative aspect-[16/10] bg-gray-100 overflow-hidden">
                   <Image
                     src={project.image}
                     alt={project.title}
                     fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="object-cover group-hover:scale-[1.03] transition-transform duration-300"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   />
                 </div>
-                
-                {/* Project Content */}
-                <div className="p-6">
-                  <span className="inline-block px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-semibold mb-3">
+                <div className="p-5 sm:p-6 flex flex-col flex-1">
+                  <span className="inline-block px-2.5 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-semibold mb-3 w-fit">
                     {project.category}
                   </span>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2 group-hover:text-orange-600 transition">
+                  <h2 className="text-xl font-bold text-gray-900 mb-1 group-hover:text-orange-600 transition line-clamp-2">
                     {project.title}
-                  </h3>
-                  <p className="text-lg text-gray-600 font-medium mb-3">
+                  </h2>
+                  <p className="text-gray-600 text-sm font-medium mb-3 line-clamp-2">
                     {project.subtitle}
                   </p>
-                  <p className="text-gray-600 leading-relaxed mb-4">
+                  <p className="text-gray-500 text-sm leading-relaxed line-clamp-3 flex-1">
                     {project.description}
                   </p>
+                  <span className="inline-flex items-center gap-1 text-orange-600 font-semibold text-sm mt-4 group-hover:gap-2 transition-all">
+                    View project
+                    <BsArrowRight className="w-4 h-4" />
+                  </span>
                 </div>
               </Link>
-            </motion.div>
+            </motion.article>
           ))}
         </div>
 
-        {/* CTA Section */}
-        <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl p-12 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Ready to Build Something Extraordinary?
+        {/* CTA */}
+        <div className="bg-orange-50 border border-orange-200 rounded-2xl p-8 sm:p-10 text-center">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+            Let&apos;s work together
           </h2>
-          <p className="text-xl text-gray-600 mb-8">
-            Let's discuss how AI and modern design can elevate your business
+          <p className="text-gray-600 mb-6">
+            Have a project in mind? Get in touch.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button
-              onClick={() => setIsBookingModalOpen(true)}
-              className="inline-flex items-center gap-2 bg-orange-600 text-white px-8 py-4 rounded-full font-semibold hover:bg-orange-700 transition shadow-lg hover:shadow-xl"
-            >
-              Book Discovery Call
-              <BsArrowRight />
-            </button>
-            <Link
-              href="/portfolio"
-              className="px-8 py-4 rounded-full font-semibold border-2 border-gray-300 text-gray-700 hover:border-orange-600 hover:text-orange-600 transition"
-            >
-              View All Projects
-            </Link>
-          </div>
+          <button
+            onClick={() => setIsBookingModalOpen(true)}
+            className="inline-flex items-center gap-2 bg-orange-600 text-white px-6 py-3 rounded-full font-semibold hover:bg-orange-700 transition shadow-md"
+          >
+            Get in Touch
+            <BsArrowRight />
+          </button>
         </div>
       </div>
       <BookingModal isOpen={isBookingModalOpen} onClose={() => setIsBookingModalOpen(false)} />

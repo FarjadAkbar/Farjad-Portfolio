@@ -8,22 +8,10 @@ import wordanalyticsImg from "@/public/wordanalytics.png";
 import { BsCodeSlash, BsDatabase, BsLayers, BsRainbow } from "react-icons/bs";
 
 export const links = [
-  {
-    name: "Home",
-    hash: "/",
-  },
-  {
-    name: "Portfolio",
-    hash: "/portfolio",
-  },
-  {
-    name: "Blogs",
-    hash: "/blogs",
-  },
-  {
-    name: "Contact",
-    hash: "/contact",
-  },
+  { name: "Home", hash: "/" },
+  { name: "Portfolio", hash: "/portfolio" },
+  { name: "Blogs", hash: "/blogs" },
+  { name: "Contact", hash: "/contact" },
 ] as const;
 
 export const experiencesData = [
@@ -94,91 +82,99 @@ export const experiencesData = [
 
 export const projectsData = [
     {
-      title: "Botsify Agentic",
-      category: "Technology",
-      subtitle: "AI Agent Management Platform",
+      slug: "pharma",
+      title: "Pharma – Sales & Inventory System",
+      category: "Healthcare",
+      subtitle: "Full-stack pharmaceutical operations platform",
       description:
-        "Complete platform for creating and managing AI agents with real-time chat functionality, streaming API, and custom MCP integration. Features version control, brand customization, and workflow generation.",
-      image: "https://picsum.photos/id/1/800/600",
-      technologies: ["Laravel", "Vue.js", "MySQL", "OpenAI API", "WebSockets", "MCP"],
+        "End-to-end pharma operations platform unifying inventory, sales, manufacturing, quality (QC/QA), warehouse, and distribution. NestJS API gateway with JWT auth, microservices for identity, master data, procurement, manufacturing, quality, and a Next.js dashboard with KPIs, stock alerts, role-based access, and audit trails.",
+      image: "/portfolio/pharma/dashboard.png",
+      images: ["/portfolio/pharma/dashboard.png"],
+      technologies: ["NestJS", "Next.js 15", "TypeScript", "PostgreSQL", "TypeORM", "Tailwind", "JWT", "pnpm"],
       features: [
-        "AI Agent Management",
-        "Real-time Chat",
-        "Streaming API",
-        "Custom MCP",
-        "Version Control",
-        "Brand Customization",
+        "API Gateway & Microservices",
+        "Identity, Master Data, Procurement",
+        "Manufacturing (BOMs, EBR, Work Orders)",
+        "QC/QA, Warehouse, Distribution, Sales/CRM",
+        "Dashboard with KPIs & Stock Alerts",
+        "Role-based & Site-scoped Access",
       ],
-      github: "https://github.com",
-      demo: "https://botsify.com",
+      github: "https://github.com/FarjadAkbar/pharma-inventory-sales",
+      demo: "https://v0-angular-crm-project.vercel.app",
       highlight: true,
     },
     {
-      title: "Finyou",
+      slug: "botsify-agentic",
+      title: "Botsify Agentic",
       category: "Technology",
-      subtitle: "Startup Funding Platform",
+      subtitle: "AI Agent platform — frontend, realtime, MCPs, white-label",
       description:
-        "Fintech platform designed for startups and small businesses with user-friendly interfaces, dynamic form rendering, and personalized dashboards powered by OpenAI for guided financial workflows.",
-      image: "https://picsum.photos/id/2/800/600",
-      technologies: ["Next.js", "React Query", "Zustand", "ShadeCn", "Docker", "CI/CD"],
-      features: ["Startup Funding", "Business Dashboard", "User Experience", "Responsive Design"],
-      github: "https://github.com",
-      demo: "https://finyou.com",
-      highlight: false,
+        "I handled the complete frontend and backend modules: realtime conversation, analytics, building agents, MCPs, and third-party integrations (WhatsApp, Facebook, Meta). Key challenge: agent prompts — we built thinking, building, and suggestion steps plus a final prompt that runs on the chatbot. We rewamped from a workflow-based system to a conversation-based one; I focused on the agents page, implemented OpenAI response API, MCPs, and web/file search. The hard part was system_prompt design so the agent could replicate what customers do with drag-and-drop. Fixed a critical bug where connecting the same MCP twice (e.g. two Google Sheets) broke the bot — MCP wasn’t creating unique sessions; fixed after hours of debugging. For white-label we use a Cloudflare Worker so whitelabel.com/api routes to our API without exposing our backend URL.",
+      image: "/portfolio/botsify/dashboard.png",
+      images: ["/portfolio/botsify/dashboard.png", "/portfolio/botsify/real-time-conversation.png", "/portfolio/botsify/mcp.png", "/portfolio/botsify/analytics.png", "/portfolio/botsify/thirdparty-service.png", "/portfolio/botsify/partner-portal.png"],
+      technologies: ["Laravel", "Vue.js", "MySQL", "Node.js", "Docker", "OpenAI API", "MCP", "Cloudflare Workers"],
+      features: [
+        "Real-time Chat & Streaming",
+        "MCP, Web & File Search",
+        "Agent Builder & System Prompts",
+        "White-label + Proxy (Cloudflare)",
+        "WhatsApp, Facebook, Meta",
+        "Analytics & Unique MCP Sessions",
+      ],
+      demo: "https://agentic.botsify.com",
+      highlight: true,
     },
     {
+      slug: "realmex",
       title: "Realmex",
       category: "Technology",
-      subtitle: "Real Estate Platform",
+      subtitle: "Property search system for agents — auto-notify customers",
       description:
-        "Full-stack real estate platform for buying and selling properties in the Netherlands with real-time updates, advanced search and filter capabilities, and comprehensive user management system.",
-      image: "https://picsum.photos/id/3/800/600",
-      technologies: ["Laravel", "Vue.js", "Pusher", "Python", "Redis", "MySQL", "S3"],
-      features: ["Property Listings", "Real-time Updates", "Search & Filter", "User Management"],
-      github: "https://github.com",
-      demo: "https://realmex.com",
-      highlight: false,
+        "Most effective feature I built: agents can create queries and add emails; when the API returns a property that matches the query, the system sends an email to the agent and to the addresses on the query. That helps agents auto-notify their customers about properties they’re interested in. Also implemented real-time conversation.",
+      image: "/portfolio/realmex/custom-query.png",
+      images: ["/portfolio/realmex/custom-query.png", "/portfolio/realmex/properties-list.png", "/portfolio/realmex/preview-property.png"],
+      technologies: ["Laravel", "Vue.js", "MySQL", "Docker", "AWS"],
+      features: ["Query + Email Notifications", "Auto-notify Customers", "Real-time Conversation", "Property Listings"],
+      demo: "https://www.realmex.io/",
+      highlight: true,
     },
     {
+      slug: "cabbie",
       title: "Cabbie",
       category: "Technology",
-      subtitle: "Taxi Management Platform",
+      subtitle: "Taxi platform — backend API, dashboard, real-time location",
       description:
-        "Comprehensive taxi management platform similar to Uber with ride booking, real-time tracking, payment integration, and driver management. Built with Laravel and MQTT for real-time communication.",
-      image: "https://picsum.photos/id/4/800/600",
-      technologies: ["Laravel", "MQTT", "MySQL", "Queue", "S3", "Serverless Functions"],
-      features: ["Ride Booking", "Real-time Tracking", "Payment Integration", "Driver Management"],
-      github: "https://github.com",
-      demo: "https://cabbie.com",
+        "Platform built for a client from scratch. Implemented the API on the backend and a dashboard to view all data. Used RabbitMQ/MQTT for real-time driver location and to notify the customer.",
+      image: "/portfolio/cabbie/dashboard.png",
+      images: ["/portfolio/cabbie/dashboard.png", "/portfolio/cabbie/drivers.png", "/portfolio/cabbie/locations.png"],
+      technologies: ["Laravel", "MQTT", "MySQL", "Queue", "S3", "Serverless"],
+      features: ["Ride Booking", "Real-time Driver Location", "Dashboard", "Customer Notifications"],
+      github: "",
+      demo: "https://www.cabbie.today/",
       highlight: false,
     },
     {
-      title: "OnAnIsland",
+      slug: "gigsfinder",
+      title: "GigsFinder",
       category: "Technology",
-      subtitle: "Community Chat Application",
+      subtitle: "Venues, musicians, concerts — booking and tickets",
       description:
-        "Real-time chat application tailored for an island community in the USA with messaging features, community tools, file sharing, and user profiles. Built with NestJS and Socket.io.",
-      image: "https://picsum.photos/id/5/800/600",
-      technologies: ["NestJS", "PostgreSQL", "Socket.io", "Prisma", "Redis", "Docker", "S3"],
-      features: ["Real-time Messaging", "Community Features", "File Sharing", "User Profiles"],
-      github: "https://github.com",
-      demo: "https://onanisland.com",
-      highlight: false,
-    },
-    {
-      title: "Brainwash",
-      category: "Technology",
-      subtitle: "Laundry Management App",
-      description:
-        "Student-focused laundry app for hostel students with booking system, payment processing, and request management. Features Stripe integration and real-time notifications.",
-      image: "https://picsum.photos/id/6/800/600",
-      technologies: ["NestJS", "PostgreSQL", "Stripe", "Webhooks", "TypeORM"],
-      features: ["Laundry Booking", "Payment Processing", "Student Dashboard", "Request Management"],
-      github: "https://github.com",
-      demo: "https://brainwash.com",
+        "Helps venue owners register, musicians to book venues, and customers to see which musician is playing where. Built with Next.js and Laravel. Uses user location to suggest nearest venues and concerts. Musicians request venue owners for booking; on acceptance they can create a concert for that date. On the customer side, once a ticket is sold the customer cannot double-book. Challenge: prevent musicians from requesting the same venue/time when already booked. Used Firebase to notify musicians when a venue is booked and to restrict over-booking. Solution: when booking starts, reserve the slot for 5–10 minutes then release.",
+      image: "/portfolio/gigsfinder/concert-view.png",
+      images: ["/portfolio/gigsfinder/concert-view.png", "/portfolio/gigsfinder/concerts.png", "/portfolio/gigsfinder/venues.png", "/portfolio/gigsfinder/onboarding.png"],
+      technologies: ["Next.js", "Laravel", "Firebase", "Location-based", "Booking & Reservations"],
+      features: ["Venue Registration", "Musician Booking", "Concert Listings", "Time-slot Reserve & Release"],
+      github: "",
+      demo: "https://gigsfinder.com",
       highlight: false,
     },
   ] as const;
+
+export type Project = (typeof projectsData)[number];
+
+export function getProjectBySlug(slug: string): Project | undefined {
+  return projectsData.find((p) => p.slug === slug);
+}
 
 
 export const skillsData = [
@@ -283,26 +279,18 @@ export const websiteProblemsData = [
 export const blogPostsData = [
   {
     id: 1,
-    title: "Getting Started with Next.js 14",
-    excerpt: "Learn how to build modern web applications with Next.js 14 and React Server Components.",
-    date: "2024-01-15",
-    slug: "getting-started-with-nextjs-14",
-  },
-  {
-    id: 2,
-    title: "AI Integration in Web Development",
-    excerpt: "Discover how to integrate AI features into your web applications for better user experiences.",
-    date: "2024-01-10",
-    slug: "ai-integration-in-web-development",
-  },
-  {
-    id: 3,
-    title: "Best Practices for Responsive Design",
-    excerpt: "Essential tips and techniques for creating mobile-first responsive websites.",
-    date: "2024-01-05",
-    slug: "best-practices-for-responsive-design",
+    title: "Understanding OpenAI json_schema, MCP, and the 30-Second Streaming Pause",
+    excerpt: "Why missing tool_choice when using OpenAI structured outputs with MCP causes a long streaming pause, and how to fix it.",
+    date: "2025-02-28",
+    slug: "openai-json-schema-mcp-streaming-pause",
   },
 ] as const;
+
+export type BlogPost = (typeof blogPostsData)[number];
+
+export function getBlogBySlug(slug: string): BlogPost | undefined {
+  return blogPostsData.find((p) => p.slug === slug);
+}
 
 export const testimonialsData = [
   {

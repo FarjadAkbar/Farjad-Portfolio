@@ -79,20 +79,24 @@ export default function Project({
                       ))}
                     </div>
                   </div>
-                  {/* <div className="flex gap-3">
-                    <Link href={github} target="_blank">
-                      <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-gray-900 dark:text-white">
-                        <BsGithub className="w-4 h-4" />
-                        Code
-                      </button>
-                    </Link>
-                    <Link href={demo} target="_blank">
-                      <button className="flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200 text-white rounded-lg transition-colors">
-                        <FaExternalLinkAlt className="w-4 h-4" />
-                        Live Demo
-                      </button>
-                    </Link>
-                  </div> */}
+                  <div className="flex flex-wrap gap-3">
+                    {github && (
+                      <Link href={github} target="_blank" rel="noopener noreferrer">
+                        <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-gray-900 dark:text-white">
+                          <BsGithub className="w-4 h-4" />
+                          Code
+                        </button>
+                      </Link>
+                    )}
+                    {demo && (
+                      <Link href={demo} target="_blank" rel="noopener noreferrer">
+                        <button className="flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200 text-white rounded-lg transition-colors">
+                          <FaExternalLinkAlt className="w-4 h-4" />
+                          Live Demo
+                        </button>
+                      </Link>
+                    )}
+                  </div>
                 </div>
               </div>
     </motion.div>

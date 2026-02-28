@@ -51,7 +51,7 @@ export default function Hero() {
           className="mb-6"
         >
           <span className="inline-block px-4 py-2 bg-green-100 text-green-700 rounded-full text-sm font-medium mb-6">
-            Now Accepting New Projects
+            Full Stack Engineer
           </span>
         </motion.div>
 
@@ -61,9 +61,9 @@ export default function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          I Build Websites That Drive
+          Farjad Akbar
           <br />
-          <span className="text-orange-600">Business Growth</span>
+          <span className="text-orange-600">Building Full-Stack & AI Products</span>
         </motion.h1>
 
         <motion.p
@@ -72,7 +72,7 @@ export default function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          Complete websites with AI features, dashboards, and premium design delivered in 7-10 days.
+          Laravel, NestJS, Vue, React — scalable apps, microservices, and AI-driven features. From pharma operations platforms to agentic workflows.
         </motion.p>
 
         <motion.div
@@ -81,19 +81,19 @@ export default function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
-          <button
-            onClick={() => setIsBookingModalOpen(true)}
-            className="group bg-orange-600 text-white px-8 py-4 rounded-full font-semibold flex items-center gap-2 hover:bg-orange-700 transition shadow-lg hover:shadow-xl"
-          >
-            Book Discovery Call
-            <BsArrowRight className="group-hover:translate-x-1 transition" />
-          </button>
           <Link
             href="/portfolio"
+            className="group bg-orange-600 text-white px-8 py-4 rounded-full font-semibold flex items-center gap-2 hover:bg-orange-700 transition shadow-lg hover:shadow-xl"
+          >
+            View Portfolio
+            <BsArrowRight className="group-hover:translate-x-1 transition" />
+          </Link>
+          <button
+            onClick={() => setIsBookingModalOpen(true)}
             className="px-8 py-4 rounded-full font-semibold border-2 border-gray-300 text-gray-700 hover:border-orange-600 hover:text-orange-600 transition"
           >
-            View My Work
-          </Link>
+            Get in Touch
+          </button>
         </motion.div>
       </div>
       <BookingModal isOpen={isBookingModalOpen} onClose={() => setIsBookingModalOpen(false)} />
