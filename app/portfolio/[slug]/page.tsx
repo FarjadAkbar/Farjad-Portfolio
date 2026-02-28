@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { getProjectBySlug } from "@/lib/data";
@@ -10,7 +10,6 @@ import { FaExternalLinkAlt } from "react-icons/fa";
 
 export default function ProjectDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const slug = typeof params.slug === "string" ? params.slug : "";
   const project = getProjectBySlug(slug);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -28,7 +27,8 @@ export default function ProjectDetailPage() {
     );
   }
 
-  const images = "images" in project && Array.isArray(project.images) ? project.images : [project.image];
+  const images: string[] =
+    "images" in project && Array.isArray(project.images) ? [...project.images] : [project.image];
 
   return (
     <main className="pt-28 pb-20 px-4">
