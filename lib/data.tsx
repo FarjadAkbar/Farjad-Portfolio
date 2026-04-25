@@ -347,8 +347,8 @@ export const blogPostsData = [
         <p>If token prices rise and free tiers disappear, many AI products become expensive to run or hard to scale.</p>
 
         <h2 class="text-xl font-bold text-gray-900 mt-10 mb-3">Scenario: When LLMs Break or Become Expensive</h2>
-        <h3 class="text-lg font-semibold text-gray-900 mt-6 mb-2">1. Return of traditional systems</h3>
-        <p>Rule engines, classical ML, and deterministic workflows come back because they are predictable, cheaper, and reliable.</p>
+        <h3 class="text-lg font-semibold text-gray-900 mt-6 mb-2">1. Greater reliance on traditional systems alongside LLMs</h3>
+        <p>Rule engines, classical ML, and deterministic workflows were always in production. In tighter cost conditions, teams rely on them more and reserve LLM calls for tasks where language reasoning adds clear value.</p>
 
         <h3 class="text-lg font-semibold text-gray-900 mt-6 mb-2">2. Rise of hybrid AI</h3>
         <pre class="p-4 bg-gray-900 text-white rounded-lg overflow-x-auto text-sm"><code>Rules -> ML -> Retrieval -> LLM (last step only)</code></pre>
@@ -361,7 +361,7 @@ export const blogPostsData = [
           <li>Predictions: ML models</li>
           <li>Complex reasoning: LLMs</li>
         </ul>
-        <p>This shift alone can cut cost by <strong>70-90%</strong>.</p>
+        <p>This shift can reduce cost significantly, often <strong>30-80% depending on workload</strong>.</p>
 
         <h2 class="text-xl font-bold text-gray-900 mt-10 mb-3">A New Hiring Signal: Cost-Aware Engineers</h2>
         <p>Companies will evaluate who can reduce token usage, design fallbacks, and avoid unnecessary LLM calls.</p>
@@ -426,6 +426,7 @@ LLM (only if necessary)</code></pre>
         <pre class="p-4 bg-gray-900 text-white rounded-lg overflow-x-auto text-sm"><code>import crypto from "node:crypto";
 
 type Tier = "simple" | "medium" | "complex";
+type Intent = "faq" | "order_status" | "policy" | "analytics" | "draft_email";
 type AiResult = { answer: string; source: string; model?: string; cached?: boolean };
 
 const providers = {
@@ -438,14 +439,23 @@ function sha(text: string) {
   return crypto.createHash("sha256").update(text).digest("hex");
 }
 
-function chooseTier(input: string): Tier {
-  if (input.length &lt; 160) return "simple";
-  if (input.length &lt; 900) return "medium";
-  return "complex";
+function chooseTier(args: { intent: Intent; confidence: number; hasNumbers: boolean }): Tier {
+  if (args.intent === "faq" || args.intent === "order_status") return "simple";
+  if (args.intent === "policy" && args.confidence &gt; 0.8) return "simple";
+  if (args.intent === "analytics" && args.hasNumbers) return "complex";
+  return args.confidence &gt; 0.7 ? "medium" : "complex";
 }
 
-function buildCacheKey(userId: string, prompt: string, tier: Tier) {
-  return \`ai:v2:\${userId}:\${tier}:\${sha(prompt)}\`;
+function buildCacheKey(args: {
+  tenantId: string;
+  userId: string;
+  prompt: string;
+  tier: Tier;
+  policyVersion: string;
+  kbVersion: string;
+}) {
+  // Include tenant/user/versions to avoid context mismatch and stale responses
+  return \`ai:v3:\${args.tenantId}:\${args.userId}:\${args.tier}:\${args.policyVersion}:\${args.kbVersion}:\${sha(args.prompt)}\`;
 }
 
 function tryRuleEngine(prompt: string): AiResult | null {
@@ -465,8 +475,17 @@ async function retrieveFacts(prompt: string): Promise&lt;string[]&gt; {
 
 export async function generateAnswer(userId: string, prompt: string): Promise&lt;AiResult&gt; {
   const started = Date.now();
-  const tier = chooseTier(prompt);
-  const cacheKey = buildCacheKey(userId, prompt, tier);
+  const tenantId = auth.getTenantId();
+  const classified = await classifyIntent(prompt); // { intent, confidence, hasNumbers }
+  const tier = chooseTier(classified);
+  const cacheKey = buildCacheKey({
+    tenantId,
+    userId,
+    prompt,
+    tier,
+    policyVersion: "2026-04",
+    kbVersion: "kb-172",
+  });
 
   const cached = await redis.get(cacheKey);
   if (cached) {
@@ -482,6 +501,9 @@ export async function generateAnswer(userId: string, prompt: string): Promise&lt
   }
 
   const context = await retrieveFacts(prompt);
+  if (!context.length && classified.intent !== "draft_email") {
+    metrics.increment("ai.retrieval_empty", 1, { intent: classified.intent });
+  }
   const chain = providers[tier];
 
   for (const model of chain) {
@@ -493,6 +515,12 @@ export async function generateAnswer(userId: string, prompt: string): Promise&lt
         maxOutputTokens: tier === "complex" ? 1200 : 500,
       });
 
+      const parsed = safeJsonParse(response.text);
+      if (!parsed.ok) {
+        metrics.increment("ai.invalid_output", 1, { model });
+        throw new Error("invalid_output_schema");
+      }
+
       const result: AiResult = {
         answer: response.text,
         source: "llm",
@@ -501,6 +529,9 @@ export async function generateAnswer(userId: string, prompt: string): Promise&lt
 
       await redis.set(cacheKey, JSON.stringify(result), "EX", 3600);
       metrics.timing("ai.success_latency_ms", Date.now() - started, { model, tier });
+      metrics.gauge("ai.tokens_input", response.usage.inputTokens, { model });
+      metrics.gauge("ai.tokens_output", response.usage.outputTokens, { model });
+      metrics.gauge("ai.cost_usd", response.usage.costUsd, { model });
       return result;
     } catch (error) {
       logger.warn({ model, tier, error }, "provider_failed_trying_next");
@@ -537,17 +568,18 @@ if (intent === "refund_policy") {
 return await llmAnswer(userQuery);</code></pre>
 
         <h3 class="text-lg font-semibold text-gray-900 mt-6 mb-2">2) Add prompt/output caching</h3>
-        <pre class="p-4 bg-gray-900 text-white rounded-lg overflow-x-auto text-sm"><code>const key = \`ai:v2:\${tenantId}:\${sha(normalizedPrompt)}\`;
+        <pre class="p-4 bg-gray-900 text-white rounded-lg overflow-x-auto text-sm"><code>// Cache is powerful but can return stale or wrong context
+const key = \`ai:v3:\${tenantId}:\${userId}:\${policyVersion}:\${kbVersion}:\${sha(normalizedPrompt)}\`;
 const cached = await redis.get(key);
 if (cached) return JSON.parse(cached);
-await redis.set(key, JSON.stringify(result), "EX", 3600);</code></pre>
+await redis.set(key, JSON.stringify(result), "EX", 900); // short TTL for dynamic content</code></pre>
+        <p class="text-sm text-gray-600">Use TTL strategy and versioned keys. Include personalization fields to prevent context mismatch.</p>
 
-        <h3 class="text-lg font-semibold text-gray-900 mt-6 mb-2">3) Route models by complexity</h3>
-        <pre class="p-4 bg-gray-900 text-white rounded-lg overflow-x-auto text-sm"><code>const route = {
-  faq: "local-mini",
-  support: "gpt-5-mini",
-  strategy: "gpt-5",
-}[taskType];</code></pre>
+        <h3 class="text-lg font-semibold text-gray-900 mt-6 mb-2">3) Route models by intent, confidence, and cost target</h3>
+        <pre class="p-4 bg-gray-900 text-white rounded-lg overflow-x-auto text-sm"><code>if (intent === "faq" &amp;&amp; confidence &gt; 0.9) model = "local-mini";
+else if (intent === "analytics") model = "gpt-5";
+else if (monthlySpendUsd &gt; budgetCap) model = "gpt-5-mini";
+else model = "gpt-5-mini";</code></pre>
 
         <h3 class="text-lg font-semibold text-gray-900 mt-6 mb-2">4) Design multi-provider fallback</h3>
         <pre class="p-4 bg-gray-900 text-white rounded-lg overflow-x-auto text-sm"><code>const fallbackChain = ["openai-gpt-4.1", "anthropic-sonnet", "local-mistral"];
@@ -562,6 +594,118 @@ for (const model of fallbackChain) {
   runClassifier(input) ??
   answerFromRetrieval(input) ??
   await answerFromLLM(input);</code></pre>
+
+        <h2 class="text-xl font-bold text-gray-900 mt-10 mb-3">Real-world pain points teams hit in production</h2>
+        <h3 class="text-lg font-semibold text-gray-900 mt-6 mb-2">Caching challenges</h3>
+        <ul class="list-disc pl-6 space-y-1">
+          <li>Stale responses after pricing or policy updates</li>
+          <li>Context mismatch when the same prompt comes from different users or tenants</li>
+          <li>Need for invalidation strategy, not just TTL</li>
+        </ul>
+        <pre class="p-4 bg-gray-900 text-white rounded-lg overflow-x-auto text-sm"><code>Architecture
+API -> Cache (tenant+user scoped) -> Policy/KB version check -> LLM
+
+Code
+const key = \`resp:\${tenantId}:\${userId}:\${policyVersion}:\${kbVersion}:\${sha(prompt)}\`;
+const cached = await redis.get(key);
+if (cached) return JSON.parse(cached);
+await redis.set(key, JSON.stringify(result), "EX", 900);</code></pre>
+
+        <h3 class="text-lg font-semibold text-gray-900 mt-6 mb-2">Prompt and model incompatibility</h3>
+        <p>Same prompt can produce different output quality across models. Teams often maintain model-specific prompt templates and response validators.</p>
+        <pre class="p-4 bg-gray-900 text-white rounded-lg overflow-x-auto text-sm"><code>Architecture
+Prompt Registry -> Model Adapter -> Provider
+
+Code
+const promptByModel = {
+  "openai-gpt-5": buildOpenAIPrompt(input),
+  "anthropic-sonnet": buildAnthropicPrompt(input),
+};
+const payload = promptByModel[model] ?? buildDefaultPrompt(input);
+const response = await callProvider(model, payload);</code></pre>
+
+        <h3 class="text-lg font-semibold text-gray-900 mt-6 mb-2">Retrieval bottlenecks</h3>
+        <ul class="list-disc pl-6 space-y-1">
+          <li>Bad embeddings reduce answer quality before LLM is even called</li>
+          <li>Irrelevant chunks increase hallucination risk</li>
+          <li>Vector and database latency can dominate total response time</li>
+        </ul>
+        <pre class="p-4 bg-gray-900 text-white rounded-lg overflow-x-auto text-sm"><code>Architecture
+Query -> Re-ranker -> Top chunks -> LLM
+
+Code
+const chunks = await vectorStore.search(query, { topK: 20 });
+const reranked = await rerank(query, chunks);
+const selected = reranked.slice(0, 5);
+if (!selected.length) return fallbackNoContext();
+return callProvider(model, { query, context: selected });</code></pre>
+
+        <h3 class="text-lg font-semibold text-gray-900 mt-6 mb-2">Observability requirements</h3>
+        <p>Track token usage, cost per request, fallback rates, invalid output rates, and latency per model/provider. Without this, debugging is guesswork.</p>
+        <pre class="p-4 bg-gray-900 text-white rounded-lg overflow-x-auto text-sm"><code>Architecture
+Request Path -> Metrics + Logs + Traces -> Alerting
+
+Code
+metrics.gauge("ai.cost_usd", usage.costUsd, { model, provider });
+metrics.gauge("ai.tokens_in", usage.inputTokens, { model });
+metrics.gauge("ai.tokens_out", usage.outputTokens, { model });
+metrics.timing("ai.latency_ms", elapsedMs, { model, provider });
+metrics.increment("ai.fallback_count", didFallback ? 1 : 0, { provider });</code></pre>
+
+        <h2 class="text-xl font-bold text-gray-900 mt-10 mb-3">Failure modes in production</h2>
+        <ul class="list-disc pl-6 space-y-1">
+          <li>Cache poisoning from malformed or low-quality responses</li>
+          <li>Fallback loops that retry too aggressively and spike cost</li>
+          <li>Silent downgrade to a weaker model without alerting</li>
+          <li>Budget explosions during traffic spikes</li>
+        </ul>
+        <pre class="p-4 bg-gray-900 text-white rounded-lg overflow-x-auto text-sm"><code>Architecture
+Guardrails -> Fallback Controller -> Budget Gate -> Alerts
+
+Code
+if (!isValidSchema(output)) throw new Error("reject_bad_output");
+if (retryCount &gt;= 2) return templateFallback();
+if (monthlySpendUsd &gt; hardCapUsd) return deferToQueue(request);
+if (model !== expectedModel) alert("silent_model_downgrade", { model });</code></pre>
+
+        <h2 class="text-xl font-bold text-gray-900 mt-10 mb-3">What real scale still needs</h2>
+        <ol class="list-decimal pl-6 space-y-2">
+          <li>Queue-based async processing for spikes and long tasks</li>
+          <li>Rate limiting per provider to avoid bans and throttling</li>
+          <li>Budget guardrails that downgrade or defer expensive requests</li>
+          <li>Output validation layer (schema + policy checks)</li>
+          <li>Multi-region failover for provider and network incidents</li>
+        </ol>
+        <pre class="p-4 bg-gray-900 text-white rounded-lg overflow-x-auto text-sm"><code>Architecture
+API -> Queue -> Workers -> Provider Pools (multi-region) -> Validator
+
+Code
+await queue.publish("ai.jobs", job);
+const permit = await limiter.consume(\`\${provider}:\${region}\`);
+if (!permit) throw new Error("provider_rate_limited");
+if (costSoFarUsd &gt; userBudgetUsd) return downgradeModel();
+const parsed = validateWithSchema(result, OutputSchema);
+if (!parsed.ok) throw new Error("schema_validation_failed");
+const activeRegion = await pickHealthyRegion(["us-east-1", "eu-west-1"]);</code></pre>
+
+        <h2 class="text-xl font-bold text-gray-900 mt-10 mb-3">Positioning this correctly</h2>
+        <p>LLM-first systems are fragile at scale. The next wave requires deeper engineering beyond prompting: reliability, cost control, and system design discipline.</p>
+
+        <h3 class="text-lg font-semibold text-gray-900 mt-6 mb-2">Where this shows up in practice</h3>
+        <ul class="list-disc pl-6 space-y-1">
+          <li>Support chatbots with strict SLA and policy constraints</li>
+          <li>SaaS automation where cost per workflow must stay predictable</li>
+          <li>Internal tools where fallback behavior matters more than demo quality</li>
+        </ul>
+        <pre class="p-4 bg-gray-900 text-white rounded-lg overflow-x-auto text-sm"><code>Architecture examples
+Support chatbot: API -> Rules -> Retrieval -> LLM -> Policy Validator
+SaaS automation: Webhook -> Queue -> Workflow Engine -> LLM step -> Audit Log
+Internal tools: UI -> Cache -> Fallback chain -> Human handoff
+
+Code
+if (channel === "support" &amp;&amp; slaMs &lt; 2000) return fastPathAnswer(input);
+if (workflow.costUsd &gt; workflow.maxCostUsd) return stopAndNotify(workflow.id);
+if (fallbackLevel &gt; 1) return handoffToHuman(ticketId);</code></pre>
 
         <h2 class="text-xl font-bold text-gray-900 mt-10 mb-3">Final thought</h2>
         <p>LLMs are powerful, but they are a tool, not the system.</p>
