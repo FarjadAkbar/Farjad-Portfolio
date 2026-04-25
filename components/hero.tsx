@@ -71,7 +71,7 @@ export default function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          Laravel, NestJS, Vue, React — scalable apps, microservices, and AI-driven features. From pharma operations platforms to agentic workflows.
+          Laravel, NestJS, Vue, React - scalable apps, microservices, and AI-driven features. From pharma operations platforms to agentic workflows.
         </motion.p>
 
         <motion.div

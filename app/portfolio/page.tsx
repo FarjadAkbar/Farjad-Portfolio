@@ -28,7 +28,7 @@ export default function PortfolioPage() {
             Portfolio
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Full-stack applications, microservices, and dashboards — from pharma operations and AI agents to marketplaces and fintech.
+            Full-stack applications, microservices, and dashboards - from pharma operations and AI agents to marketplaces and fintech.
           </p>
         </header>
 
@@ -49,7 +49,7 @@ export default function PortfolioPage() {
           ))}
         </div>
 
-        {/* Projects grid — aligned cards, same structure */}
+        {/* Projects grid - aligned cards, same structure */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-16">
           {filteredProjects.map((project, index) => (
             <motion.article
