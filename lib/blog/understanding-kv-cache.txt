@@ -1,0 +1,527 @@
+<div class="space-y-4 text-gray-700 leading-relaxed">
+  <p>
+    A KV cache stores key/value tensors in memory so a model never has to recompute
+    them for tokens it has already seen. In an LLM this is the difference between a fast
+    response and a painfully slow one. Let us build the idea up step by step, starting
+    from a plain dictionary and ending with a small production-style engine.
+  </p>
+
+  <h2 class="text-xl font-bold text-gray-900 mt-10 mb-3">Step 1: Caching basics</h2>
+  <p>
+    A cache is just a dictionary: you store an expensive result under a key, and the next
+    time you look it up you return the stored value instead of recomputing it.
+  </p>
+  <pre class="p-4 bg-gray-900 text-white rounded-lg overflow-x-auto text-sm"><code>cache = {}
+
+def compute_square(x):
+    return x * x
+
+def get_value(x):
+    if x in cache:
+        return cache[x]          # cache hit
+    value = compute_square(x)    # cache miss: compute once
+    cache[x] = value
+    return value
+
+get_value(2)  # computes -&gt; 4
+get_value(2)  # cached   -&gt; 4</code></pre>
+
+  <h2 class="text-xl font-bold text-gray-900 mt-10 mb-3">Step 2: Token (KV) cache</h2>
+  <p>
+    In an LLM the key is the sequence of token ids. For each new token we append it and
+    look up the cache for the full prefix. Lists are not hashable, so we use a tuple as
+    the cache key.
+  </p>
+  <pre class="p-4 bg-gray-900 text-white rounded-lg overflow-x-auto text-sm"><code>cache = {}
+
+def compute_kv(token_ids):
+    return {
+        "K": [t * 0.1 for t in token_ids],
+        "V": [t * 0.2 for t in token_ids],
+    }
+
+def get_kv(token_ids):
+    key = tuple(token_ids)       # lists cannot be dict keys
+    if key in cache:
+        return cache[key]
+    value = compute_kv(token_ids)
+    cache[key] = value
+    return value
+
+get_kv([1, 2, 3])
+# {"K": [0.1, 0.2, 0.3], "V": [0.2, 0.4, 0.6]}</code></pre>
+
+  <h2 class="text-xl font-bold text-gray-900 mt-10 mb-3">Step 3: Eviction</h2>
+  <p>
+    GPU memory is finite. When the cache is full we must evict an entry to make room for
+    a new one. The simplest policy drops the oldest inserted entry.
+  </p>
+  <pre class="p-4 bg-gray-900 text-white rounded-lg overflow-x-auto text-sm"><code>cache = {}
+MAX_SIZE = 3
+
+def compute_kv(token_ids):
+    return {
+        "K": [t * 0.1 for t in token_ids],
+        "V": [t * 0.2 for t in token_ids],
+    }
+
+def get_kv(token_ids):
+    key = tuple(token_ids)
+    if key in cache:
+        return cache[key]
+    if len(cache) &gt;= MAX_SIZE:          # full: make room first
+        cache.pop(next(iter(cache)))   # drop the oldest entry
+    cache[key] = compute_kv(token_ids)
+    return cache[key]</code></pre>
+
+  <h2 class="text-xl font-bold text-gray-900 mt-10 mb-3">Step 4: LRU cache</h2>
+  <p>
+    A smarter policy is least-recently-used (LRU): keep track of access order and evict
+    the entry that was used longest ago. An <code class="px-1.5 py-0.5 bg-gray-100 rounded text-sm">OrderedDict</code>
+    makes this clean.
+  </p>
+  <pre class="p-4 bg-gray-900 text-white rounded-lg overflow-x-auto text-sm"><code>from collections import OrderedDict
+
+cache = OrderedDict()
+MAX_SIZE = 3
+
+def compute_kv(token_ids):
+    return {
+        "K": [t * 0.1 for t in token_ids],
+        "V": [t * 0.2 for t in token_ids],
+    }
+
+def get_kv(token_ids):
+    key = tuple(token_ids)
+    if key in cache:
+        cache.move_to_end(key)         # mark as most-recently used
+        return cache[key]
+    if len(cache) &gt;= MAX_SIZE:
+        cache.popitem(last=False)      # evict least-recently used
+    cache[key] = compute_kv(token_ids)
+    return cache[key]</code></pre>
+
+  <h2 class="text-xl font-bold text-gray-900 mt-10 mb-3">Step 5: Blocks (PagedAttention)</h2>
+  <p>
+    Instead of caching a whole sequence as one blob, we split memory into fixed-size
+    blocks (pages). Each block holds the K/V for N tokens, and a sequence is stored as a
+    list of block ids. This is the core idea behind PagedAttention.
+  </p>
+  <pre class="p-4 bg-gray-900 text-white rounded-lg overflow-x-auto text-sm"><code>BLOCK_SIZE = 4
+NUM_BLOCKS = 7
+
+memory = [None] * NUM_BLOCKS          # None = free slot
+free_list = list(range(NUM_BLOCKS))
+sequences = {}                        # seq_id -&gt; [block_id, ...]
+
+def allocate_block(chunk):
+    if not free_list:
+        return None                   # out of memory
+    block_id = free_list.pop(0)
+    memory[block_id] = chunk
+    return block_id
+
+def free_block(block_id):
+    memory[block_id] = None
+    free_list.append(block_id)
+
+def store_sequence(seq_id, token_ids):
+    blocks = []
+    for i in range(0, len(token_ids), BLOCK_SIZE):
+        block_id = allocate_block(token_ids[i:i + BLOCK_SIZE])
+        if block_id is None:
+            return None
+        blocks.append(block_id)
+    sequences[seq_id] = blocks
+    return blocks
+
+def free_sequence(seq_id):
+    for block_id in sequences.pop(seq_id, []):
+        free_block(block_id)</code></pre>
+
+  <h2 class="text-xl font-bold text-gray-900 mt-10 mb-3">Step 6: Prefix reuse</h2>
+  <p>
+    Two requests that share a prefix (for example, the same system prompt) can point to
+    the same physical block. We hash a block's token content and return an existing block
+    on a hit, tracking how many sequences reference it.
+  </p>
+  <pre class="p-4 bg-gray-900 text-white rounded-lg overflow-x-auto text-sm"><code>BLOCK_SIZE = 4
+NUM_BLOCKS = 7
+
+memory = {}                 # block_id -&gt; {"tokens", "ref_count"}
+free_list = list(range(NUM_BLOCKS))
+prefix_cache = {}           # hash(tokens) -&gt; block_id
+
+def alloc_block(tokens):
+    h = hash(tuple(tokens))
+    if h in prefix_cache:                    # identical block already exists
+        block_id = prefix_cache[h]
+        memory[block_id]["ref_count"] += 1   # share it
+        return block_id
+    block_id = free_list.pop(0)
+    memory[block_id] = {"tokens": list(tokens), "ref_count": 1}
+    prefix_cache[h] = block_id
+    return block_id
+
+def release_block(block_id):
+    memory[block_id]["ref_count"] -= 1
+    if memory[block_id]["ref_count"] == 0:   # no users left
+        h = hash(tuple(memory[block_id]["tokens"]))
+        prefix_cache.pop(h, None)
+        free_list.append(block_id)
+        del memory[block_id]
+
+def store_seq(tokens):
+    blocks = []
+    for i in range(0, len(tokens), BLOCK_SIZE):
+        blocks.append(alloc_block(tokens[i:i + BLOCK_SIZE]))
+    return blocks
+
+shared = [1, 2, 3, 4]                      # same system prompt for both requests
+a = store_seq(shared + [10, 11, 12, 13])
+b = store_seq(shared + [20, 21, 22, 23])   # reuses the shared prefix block
+
+for block_id in a:
+    release_block(block_id)
+for block_id in b:
+    release_block(block_id)</code></pre>
+
+  <h2 class="text-xl font-bold text-gray-900 mt-10 mb-3">Step 7: Preemption</h2>
+  <p>
+    When a high-priority request arrives and there is no free block, we cannot simply
+    refuse it. Instead we preempt a lower-priority running request: save its tokens to CPU
+    memory, free its GPU blocks, serve the new request, and restore it later.
+  </p>
+  <pre class="p-4 bg-gray-900 text-white rounded-lg overflow-x-auto text-sm"><code>BLOCK_SIZE = 4
+NUM_BLOCKS = 6
+
+memory = {}                       # block_id -&gt; tokens
+free_list = list(range(NUM_BLOCKS))
+cpu_swap = {}                     # req_id -&gt; tokens (saved on CPU)
+running = {}                      # req_id -&gt; {tokens, blocks, priority}
+
+def blocks_needed(tokens):
+    return -(-len(tokens) // BLOCK_SIZE)   # ceil division
+
+def alloc_block(chunk):
+    block_id = free_list.pop(0)
+    memory[block_id] = chunk
+    return block_id
+
+def free_block(block_id):
+    memory.pop(block_id, None)
+    free_list.append(block_id)
+
+def admit(req_id, tokens, priority):
+    if len(free_list) &lt; blocks_needed(tokens):
+        return False
+    blocks = [alloc_block(tokens[i:i + BLOCK_SIZE])
+              for i in range(0, len(tokens), BLOCK_SIZE)]
+    running[req_id] = {"tokens": tokens, "blocks": blocks, "priority": priority}
+    return True
+
+def preempt_lowest():
+    victim = min(running, key=lambda r: running[r]["priority"])
+    req = running.pop(victim)
+    cpu_swap[victim] = req["tokens"]       # save progress to CPU
+    for block_id in req["blocks"]:
+        free_block(block_id)
+
+def admit_with_preemption(req_id, tokens, priority):
+    while not admit(req_id, tokens, priority):
+        if not running:
+            raise MemoryError("cannot fit request")
+        preempt_lowest()
+    return True
+
+def restore(req_id, priority):
+    tokens = cpu_swap.pop(req_id)
+    admit_with_preemption(req_id, tokens, priority)
+
+admit("req-A", list(range(8)), priority=3)            # low  prio, 2 blocks
+admit("req-B", list(range(8)), priority=5)            # mid  prio, 2 blocks
+admit("req-C", list(range(8)), priority=7)            # high prio, 2 blocks -&gt; full
+admit_with_preemption("req-D", list(range(8)), priority=9)  # preempts req-A</code></pre>
+
+  <h2 class="text-xl font-bold text-gray-900 mt-10 mb-3">Step 8: Scheduler</h2>
+  <p>
+    The scheduler runs in iterations. Each step it restores swapped requests, admits
+    waiting requests in priority order, and preempts the lowest-priority runner when
+    something more important is still waiting.
+  </p>
+  <pre class="p-4 bg-gray-900 text-white rounded-lg overflow-x-auto text-sm"><code>import heapq
+
+BLOCK_SIZE = 4
+NUM_BLOCKS = 6
+
+free_list = list(range(NUM_BLOCKS))
+waiting = []     # max-heap via negative priority: (-priority, req_id, tokens)
+running = {}     # req_id -&gt; {blocks, tokens, priority}
+swapped = {}     # req_id -&gt; {tokens, priority}
+
+def blocks_needed(tokens):
+    return -(-len(tokens) // BLOCK_SIZE)
+
+def try_alloc(tokens):
+    n = blocks_needed(tokens)
+    if len(free_list) &lt; n:
+        return None
+    return [free_list.pop(0) for _ in range(n)]
+
+def release(blocks):
+    free_list.extend(blocks)
+
+def enqueue(req_id, tokens, priority):
+    heapq.heappush(waiting, (-priority, req_id, tokens))
+
+def schedule_step():
+    # 1. restore swapped requests first (they already did work)
+    for req_id in list(swapped):
+        blocks = try_alloc(swapped[req_id]["tokens"])
+        if blocks:
+            running[req_id] = {"blocks": blocks, **swapped.pop(req_id)}
+
+    # 2. admit waiting requests in priority order
+    leftover = []
+    while waiting:
+        neg_prio, req_id, tokens = heapq.heappop(waiting)
+        blocks = try_alloc(tokens)
+        if blocks:
+            running[req_id] = {"blocks": blocks, "tokens": tokens, "priority": -neg_prio}
+        else:
+            leftover.append((neg_prio, req_id, tokens))
+            break                  # lower-priority requests will not fit either
+    for item in leftover:
+        heapq.heappush(waiting, item)
+
+    # 3. still waiting? preempt the lowest-priority runner
+    if waiting and running:
+        victim_id = min(running, key=lambda r: running[r]["priority"])
+        victim = running.pop(victim_id)
+        release(victim["blocks"])
+        swapped[victim_id] = {"tokens": victim["tokens"], "priority": victim["priority"]}
+
+enqueue("A", list(range(8)), priority=3)
+enqueue("B", list(range(8)), priority=5)
+enqueue("C", list(range(8)), priority=7)
+schedule_step()                            # admits C, B, A by priority
+
+enqueue("D", list(range(8)), priority=10)  # urgent request arrives
+schedule_step()                            # preempts the lowest-priority runner</code></pre>
+
+  <h2 class="text-xl font-bold text-gray-900 mt-10 mb-3">Step 9: Pressure loop</h2>
+  <p>
+    Rather than reacting only when memory runs out, a production system watches free-block
+    watermarks continuously and takes graduated action: evict cold prefixes, then stop
+    admitting, then preempt. Each threshold triggers a different response.
+  </p>
+  <pre class="p-4 bg-gray-900 text-white rounded-lg overflow-x-auto text-sm"><code>class MemoryPressureMonitor:
+    HIGH_WATER = 0.40    # above: healthy, admit freely
+    LOW_WATER  = 0.20    # below: stop new admissions
+    CRIT_WATER = 0.10    # below: start preempting
+
+    def __init__(self, total):
+        self.total = total
+        self.free = total
+
+    def use(self, n):
+        self.free = max(0, self.free - n)
+
+    def release(self, n):
+        self.free = min(self.total, self.free + n)
+
+    @property
+    def ratio(self):
+        return self.free / self.total
+
+    @property
+    def level(self):
+        r = self.ratio
+        if r &gt;= self.HIGH_WATER:
+            return "OK"
+        if r &gt;= self.LOW_WATER:
+            return "SOFT"
+        if r &gt;= self.CRIT_WATER:
+            return "HARD"
+        return "CRITICAL"
+
+    def respond(self):
+        if self.level == "OK":
+            return "admit freely"
+        if self.level == "SOFT":
+            self.release(2)      # evict a few cold prefix blocks
+            return "evict cold prefixes"
+        if self.level == "HARD":
+            self.release(4)      # stop admissions + evict aggressively
+            return "stop admissions + evict"
+        self.release(6)          # preempt running requests
+        return "preempt now"
+
+mon = MemoryPressureMonitor(20)
+for n in [2, 2, 2, 2, 2, 2, 2, 2, 2]:
+    mon.use(n)
+    print(f"free={mon.free:2}/{mon.total} [{mon.level}] -&gt; {mon.respond()}")</code></pre>
+
+  <h2 class="text-xl font-bold text-gray-900 mt-10 mb-3">Step 10: The final system</h2>
+  <p>
+    Now we wire everything into a single engine: a paged block allocator, a prefix cache
+    with reference counting, LRU eviction of cold prefixes, preemption of low-priority
+    requests, and pressure-aware scheduling.
+  </p>
+  <pre class="p-4 bg-gray-900 text-white rounded-lg overflow-x-auto text-sm"><code>from collections import OrderedDict
+import heapq
+
+BLOCK_SIZE = 4
+NUM_BLOCKS = 16
+
+class KVCacheEngine:
+    """PagedAttention-style KV cache with prefix reuse, LRU eviction,
+    preemption, and memory-pressure-aware scheduling."""
+
+    HIGH_WATER = 0.40
+
+    def __init__(self, num_blocks):
+        self.total = num_blocks
+        self.memory = {}                  # block_id -&gt; {tokens, ref_count}
+        self.free_list = list(range(num_blocks))
+        self.prefix_lru = OrderedDict()   # hash -&gt; block_id (LRU order)
+        self.running = {}
+        self.swapped = {}
+        self.waiting = []
+        self.stats = {"hits": 0, "misses": 0, "evictions": 0, "preemptions": 0}
+
+    @property
+    def free_ratio(self):
+        return len(self.free_list) / self.total
+
+    def _alloc_raw(self, tokens):
+        if not self.free_list:
+            return None
+        block_id = self.free_list.pop(0)
+        self.memory[block_id] = {"tokens": list(tokens), "ref_count": 1}
+        return block_id
+
+    def _free_raw(self, block_id):
+        del self.memory[block_id]
+        self.free_list.append(block_id)
+
+    def get_or_alloc_block(self, tokens):
+        h = hash(tuple(tokens))
+        if h in self.prefix_lru:                  # prefix hit -&gt; share block
+            block_id = self.prefix_lru[h]
+            self.prefix_lru.move_to_end(h)        # mark as hot
+            self.memory[block_id]["ref_count"] += 1
+            self.stats["hits"] += 1
+            return block_id
+        block_id = self._alloc_raw(tokens)        # miss -&gt; new block
+        if block_id is None:
+            return None
+        self.prefix_lru[h] = block_id
+        self.stats["misses"] += 1
+        return block_id
+
+    def release_block(self, block_id):
+        self.memory[block_id]["ref_count"] -= 1
+        if self.memory[block_id]["ref_count"] == 0:
+            h = hash(tuple(self.memory[block_id]["tokens"]))
+            self.prefix_lru.pop(h, None)
+            self._free_raw(block_id)
+
+    def evict_cold_prefix(self):
+        """Evict the LRU prefix block that has no active users."""
+        for h, block_id in self.prefix_lru.items():
+            if self.memory[block_id]["ref_count"] == 1:
+                self.prefix_lru.pop(h)
+                self._free_raw(block_id)
+                self.stats["evictions"] += 1
+                return True
+        return False
+
+    def alloc_sequence(self, tokens):
+        blocks = []
+        for i in range(0, len(tokens), BLOCK_SIZE):
+            block_id = self.get_or_alloc_block(tokens[i:i + BLOCK_SIZE])
+            if block_id is None:
+                return None
+            blocks.append(block_id)
+        return blocks
+
+    def relieve_pressure(self):
+        if self.free_ratio &gt;= self.HIGH_WATER:
+            return "OK"
+        if self.evict_cold_prefix():
+            return "EVICTED"
+        if self.running:
+            victim = min(self.running, key=lambda r: self.running[r]["priority"])
+            req = self.running.pop(victim)
+            for block_id in req["blocks"]:
+                self.release_block(block_id)
+            self.swapped[victim] = {"tokens": req["tokens"], "priority": req["priority"]}
+            self.stats["preemptions"] += 1
+            return f"PREEMPTED {victim}"
+        return "OOM"
+
+    def enqueue(self, req_id, tokens, priority=5):
+        heapq.heappush(self.waiting, (-priority, req_id, tokens))
+
+    def schedule(self):
+        while self.free_ratio &lt; self.HIGH_WATER:
+            if self.relieve_pressure() == "OOM":
+                break
+
+        for req_id in list(self.swapped):          # restore swapped first
+            blocks = self.alloc_sequence(self.swapped[req_id]["tokens"])
+            if blocks:
+                self.running[req_id] = {"blocks": blocks, **self.swapped.pop(req_id)}
+
+        leftover = []
+        while self.waiting:
+            neg_prio, req_id, tokens = heapq.heappop(self.waiting)
+            blocks = self.alloc_sequence(tokens)
+            if blocks:
+                self.running[req_id] = {"blocks": blocks, "tokens": tokens, "priority": -neg_prio}
+            else:
+                leftover.append((neg_prio, req_id, tokens))
+                break
+        for item in leftover:
+            heapq.heappush(self.waiting, item)
+
+    def finish(self, req_id):
+        req = self.running.pop(req_id, None)
+        if req:
+            for block_id in req["blocks"]:
+                self.release_block(block_id)
+
+    def status(self):
+        s = self.stats
+        total = s["hits"] + s["misses"]
+        hit_rate = s["hits"] / total if total else 0
+        print(f"free={len(self.free_list)}/{self.total} "
+              f"running={list(self.running)} swapped={list(self.swapped)} "
+              f"waiting={len(self.waiting)}")
+        print(f"hits={s['hits']} misses={s['misses']} "
+              f"evictions={s['evictions']} preemptions={s['preemptions']} "
+              f"hit_rate={hit_rate:.0%}")
+
+engine = KVCacheEngine(NUM_BLOCKS)
+shared = list(range(5))
+
+engine.enqueue("A", shared + [10, 11, 12, 13], priority=3)
+engine.enqueue("B", shared + [20, 21, 22, 23], priority=6)
+engine.enqueue("C", shared + [30, 31, 32, 33], priority=8)
+engine.enqueue("D", list(range(16)),          priority=9)  # big request
+
+engine.schedule(); engine.status()
+engine.finish("A")
+engine.schedule(); engine.status()
+engine.finish("B"); engine.finish("C")
+engine.schedule(); engine.status()</code></pre>
+
+  <h2 class="text-xl font-bold text-gray-900 mt-10 mb-3">Key takeaways</h2>
+  <ul class="list-disc pl-6 space-y-1">
+    <li>A KV cache trades memory for compute by reusing already-computed key/value tensors.</li>
+    <li>Paging into fixed-size blocks avoids fragmentation and enables prefix sharing.</li>
+    <li>Reference counting lets multiple requests safely share the same prefix blocks.</li>
+    <li>LRU eviction, preemption, and watermark-based pressure handling keep the system stable under load.</li>
+  </ul>
+</div>

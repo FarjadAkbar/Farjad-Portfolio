@@ -1,0 +1,37 @@
+<div class="space-y-4 text-gray-700 leading-relaxed">
+        <p>
+          Recently, while implementing OpenAI structured outputs using
+          <code class="px-1.5 py-0.5 bg-gray-100 rounded text-sm">json_schema</code> with MCP
+          (Model Context Protocol), I ran into a serious performance issue.
+        </p>
+
+        <p>The model would:</p>
+        <ul class="list-disc pl-6 space-y-1">
+          <li>Start streaming normally</li>
+          <li>Then call <code class="px-1.5 py-0.5 bg-gray-100 rounded text-sm">mcp.list</code></li>
+          <li>And suddenly pause for <strong>30 seconds</strong></li>
+          <li>After that, the next chunk appeared</li>
+        </ul>
+
+        <p>
+          After investigation, the root cause turned out to be
+          <strong>not specifying <code class="px-1.5 py-0.5 bg-gray-100 rounded text-sm">tool_choice</code></strong>.
+          When I added <code class="px-1.5 py-0.5 bg-gray-100 rounded text-sm">tool_choice</code>, the pause dropped to 8-10 seconds.
+        </p>
+
+        <h2 class="text-xl font-bold text-gray-900 mt-10 mb-3">What is json_schema in OpenAI?</h2>
+        <p>OpenAI now allows enforcing structured outputs using:</p>
+        <pre class="p-4 bg-gray-900 text-white rounded-lg overflow-x-auto text-sm"><code>response_format: {
+  type: "json_schema",
+  json_schema: { ... }
+}</code></pre>
+        <p>This guarantees strict JSON and production-ready parsing.</p>
+
+        <h2 class="text-xl font-bold text-gray-900 mt-10 mb-3">What is MCP?</h2>
+        <p>MCP allows models to list tools, call tools, fetch schemas, and interact with external systems.</p>
+
+        <h2 class="text-xl font-bold text-gray-900 mt-10 mb-3">The Real Problem: 30-Second Pause</h2>
+        <p>Without explicit tool choice, the model evaluates too many tool paths while also honoring schema constraints.</p>
+        <pre class="p-4 bg-gray-900 text-white rounded-lg overflow-x-auto text-sm"><code>tool_choice: "auto"</code></pre>
+        <p>Setting this reduced the pause significantly by removing decision overhead.</p>
+      </div>

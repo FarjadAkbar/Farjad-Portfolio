@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getBlogBySlug } from "@/lib/data";
+import { getBlogContent } from "@/lib/get-blog-content";
 import { BsArrowLeft } from "react-icons/bs";
 
 type SingleBlogPageProps = {
@@ -53,6 +54,8 @@ export default function SingleBlogPage({ params }: SingleBlogPageProps) {
   if (!post) {
     notFound();
   }
+
+  const content = getBlogContent(post.contentFile);
 
   const articleJsonLd = {
     "@context": "https://schema.org",
@@ -106,8 +109,8 @@ export default function SingleBlogPage({ params }: SingleBlogPageProps) {
         </header>
 
         <article className="prose prose-gray max-w-none">
-          {post.contentHtml ? (
-            <div dangerouslySetInnerHTML={{ __html: post.contentHtml }} />
+          {content ? (
+            <div dangerouslySetInnerHTML={{ __html: content }} />
           ) : (
             <p className="text-gray-700 leading-relaxed">No content available for this post.</p>
           )}
