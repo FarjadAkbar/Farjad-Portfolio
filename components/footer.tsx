@@ -24,8 +24,7 @@ export default function Footer() {
               <span className="text-2xl font-bold">Farjad</span>
             </Link>
             <p className="text-gray-400 text-sm mb-6 leading-relaxed">
-              Full-stack developer specializing in modern web development, AI integration, and premium website design. 
-              Building intelligent websites that drive business growth.
+              I’m Farjad, a full-stack engineer based in Karachi. I build web applications and AI automation, with hands-on ownership of APIs, databases, and production infrastructure. Have a product to build or a system to improve? Let’s talk.
             </p>
           </div>
 
@@ -52,11 +51,11 @@ export default function Footer() {
             <h4 className="font-semibold mb-4 text-white">Services</h4>
             <ul className="space-y-2 text-gray-400 text-sm">
               {[
-                { label: "Website Development", Icon: HiOutlineGlobe },
-                { label: "AI Integration", Icon: HiOutlineSparkles },
-                { label: "Dashboard Design", Icon: HiOutlineChartBar },
-                { label: "SEO Optimization", Icon: HiOutlineSearch },
-                { label: "Full-Stack Development", Icon: HiOutlineCode },
+                { label: "Web Applications", Icon: HiOutlineGlobe },
+                { label: "AI Agents & Integrations", Icon: HiOutlineSparkles },
+                { label: "Operational Dashboards", Icon: HiOutlineChartBar },
+                { label: "Performance Optimization", Icon: HiOutlineSearch },
+                { label: "Backend APIs & Services", Icon: HiOutlineCode },
               ].map(({ label, Icon }) => (
                 <li key={label} className="flex items-center gap-2"><Icon aria-hidden="true" className="h-4 w-4 shrink-0 text-gray-500" />{label}</li>
               ))}

@@ -7,7 +7,7 @@ import Link from "next/link";
 import { BsArrowRight } from "react-icons/bs";
 
 export default function BlogsPreview() {
-  const featuredBlogs = blogPostsData.slice(0, 3);
+  const featuredBlogs = [...blogPostsData].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
 
   return (
     <section className="py-20 px-4 bg-gray-50">
@@ -20,10 +20,10 @@ export default function BlogsPreview() {
           transition={{ duration: 0.5 }}
         >
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Latest Blog Posts
+            Notes from the engineering work
           </h2>
-          <p className="text-xl text-gray-600">
-            Insights, tutorials, and thoughts on web development
+          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+            Practical deep dives into AI infrastructure, agent integrations, and the details that shape production behavior.
           </p>
         </motion.div>
 
@@ -54,7 +54,7 @@ export default function BlogsPreview() {
                 href={`/blogs/${blog.slug}`}
                 className="text-orange-600 font-semibold flex items-center gap-2 hover:gap-3 transition"
               >
-                Read More
+                Read article
                 <BsArrowRight />
               </Link>
             </motion.div>
@@ -66,7 +66,7 @@ export default function BlogsPreview() {
             href="/blogs"
             className="inline-flex items-center gap-2 border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-full font-semibold hover:border-orange-600 hover:text-orange-600 transition"
           >
-            View All Blogs
+            Browse all articles
             <BsArrowRight />
           </Link>
         </div>

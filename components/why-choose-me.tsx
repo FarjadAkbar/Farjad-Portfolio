@@ -8,39 +8,39 @@ import { BsArrowRight } from "react-icons/bs";
 export default function WhyChooseMe() {
   const features = [
     {
-      badge: "AI-POWERED",
+      badge: "AI AUTOMATION",
       badgeColor: "bg-blue-100 text-blue-700",
-      title: "AI-Powered Intelligence",
-      description: "Smart chatbots, automation workflows, and AI features that enhance user experience and streamline operations.",
+      title: "AI that fits the workflow",
+      description: "Conversational agents, MCP integrations, and web and file search that connect AI to the tools and information a product needs.",
       icon: "🧠",
     },
     {
-      title: "Stunning Dashboard Design",
-      description: "Beautiful admin panels and data visualizations that make complex information simple and actionable.",
+      title: "Interfaces for everyday work",
+      description: "Dashboards, admin panels, and real-time views that help teams manage inventory, conversations, bookings, and operations.",
       icon: "📊",
     },
     {
-      badge: "RESULTS-DRIVEN",
+      badge: "COST OPTIMIZATION",
       badgeColor: "bg-green-100 text-green-700",
-      title: "Growth-Focused Strategy",
-      description: "SEO optimization, conversion design, and performance metrics built into every project.",
+      title: "Performance with a practical budget",
+      description: "Provider routing, database tuning, queues, and caching. At Botsify, I reduced AI spend and integration costs while simplifying production infrastructure.",
       icon: "📈",
     },
     {
-      badge: "END-TO-END",
+      badge: "PRODUCTION OWNERSHIP",
       badgeColor: "bg-orange-100 text-orange-700",
-      title: "Complete Digital Solution",
-      description: "Design, development, content, SEO, and hosting. Everything you need in one package.",
+      title: "Beyond the first release",
+      description: "I work across APIs, background jobs, databases, and deployment, and investigate production issues when real usage exposes the edge cases.",
       icon: "🔗",
     },
     {
-      title: "Industry Expertise",
-      description: "Specialized knowledge in technology, web development, and SaaS with proven success stories.",
+      title: "Experience across business domains",
+      description: "From pharmaceutical operations and property alerts to taxi tracking and live music bookings, I turn business rules into usable product workflows.",
       icon: "🎯",
     },
     {
-      title: "Cutting-Edge Technology",
-      description: "Next.js, React, TypeScript, and the latest AI models for future-proof solutions.",
+      title: "Resilience built into the system",
+      description: "LLM provider fallbacks, isolated MCP sessions, booking safeguards, and support tools that help teams recover when things go wrong.",
       icon: "🚀",
     },
   ];
@@ -56,10 +56,10 @@ export default function WhyChooseMe() {
           transition={{ duration: 0.5 }}
         >
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Why Industry Leaders Choose Me
+            What I bring to your product
           </h2>
-          <p className="text-xl text-gray-600">
-            The perfect blend of creativity, technology, and business strategy
+          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+            Hands-on engineering across the interface, backend, and infrastructure, grounded in the needs of the business.
           </p>
         </motion.div>
 
@@ -113,7 +113,7 @@ export default function WhyChooseMe() {
                   <div className="w-10 h-10 rounded-full bg-blue-500 border-2 border-gray-900"></div>
                   <div className="w-10 h-10 rounded-full bg-green-500 border-2 border-gray-900"></div>
                 </div>
-                <span className="text-lg font-semibold">Explore My Projects</span>
+                <span className="text-lg font-semibold">See the work behind these skills</span>
               </div>
               <BsArrowRight className="w-6 h-6 group-hover:translate-x-1 transition" />
             </Link>

@@ -13,7 +13,7 @@ export const metadata = {
     shortcut: "/favicon.png",
     apple: "/favicon.png",
   },
-  description: "Farjad is a full-stack developer with 5 years of experience.",
+  description: "Farjad Akbar is a full-stack engineer building web applications, AI automation, APIs, and production infrastructure with Laravel, NestJS, Vue, and Next.js.",
 };
 
 export default function RootLayout({

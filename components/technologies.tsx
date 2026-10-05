@@ -16,10 +16,10 @@ export default function Technologies() {
           transition={{ duration: 0.5 }}
         >
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Technologies I Work With
+            The stack behind the work
           </h2>
-          <p className="text-xl text-gray-600">
-            Modern tools and frameworks for building exceptional web experiences
+          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+            Laravel and NestJS for the backend. Vue and Next.js for the interface. Cloud infrastructure and AI integrations to bring it all together.
           </p>
         </motion.div>
 
@@ -47,7 +47,7 @@ export default function Technologies() {
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
-                {skill.skills.slice(0, 3).map((tech, techIndex) => (
+                {skill.skills.slice(0, 6).map((tech, techIndex) => (
                   <span
                     key={techIndex}
                     className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs"

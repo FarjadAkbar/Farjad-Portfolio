@@ -16,8 +16,8 @@ export default function PortfolioSlider() {
         <div className="mb-10 flex flex-wrap items-end justify-between gap-5">
           <div>
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-orange-600">Selected work</p>
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900 md:text-4xl">Software that does the heavy lifting.</h2>
-            <p className="mt-3 max-w-xl text-gray-600">AI automation, operational dashboards, and marketplaces built around real business needs.</p>
+            <h2 className="text-3xl font-bold tracking-tight text-gray-900 md:text-4xl">Real products. Hands-on engineering.</h2>
+            <p className="mt-3 max-w-xl text-gray-600">Explore what I built, the problems I worked through, and the engineering behind each product.</p>
           </div>
           <Link href="/portfolio" className="font-semibold text-orange-600 hover:text-orange-700">Explore all projects →</Link>
         </div>
