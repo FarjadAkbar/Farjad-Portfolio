@@ -8,6 +8,11 @@ import { Toaster } from "react-hot-toast";
 
 export const metadata = {
   title: "Farjad | Personal Portfolio",
+  icons: {
+    icon: [{ url: "/favicon.png", type: "image/png" }],
+    shortcut: "/favicon.png",
+    apple: "/favicon.png",
+  },
   description: "Farjad is a full-stack developer with 5 years of experience.",
 };
 

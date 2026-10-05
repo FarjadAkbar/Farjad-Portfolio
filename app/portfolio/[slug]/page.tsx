@@ -95,6 +95,20 @@ export default function ProjectDetailPage() {
           </p>
         </section>
 
+        {"outcomes" in project && (
+          <section className="mb-10 rounded-2xl border border-orange-200 bg-orange-50 p-6 sm:p-8">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Engineering impact</h2>
+            <ul className="space-y-4">
+              {project.outcomes.map((outcome) => (
+                <li key={outcome} className="flex gap-3 text-gray-700 leading-relaxed">
+                  <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-orange-600" />
+                  <span>{outcome}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
         {/* Features */}
         <section className="mb-10">
           <h2 className="text-xl font-bold text-gray-900 mb-3">Key features</h2>

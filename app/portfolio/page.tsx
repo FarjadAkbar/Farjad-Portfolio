@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { projectsData } from "@/lib/data";
 import Link from "next/link";
-import Image from "next/image";
+import ProjectPreview from "@/components/project-preview";
 import { BsArrowRight } from "react-icons/bs";
 import { motion } from "framer-motion";
 import BookingModal from "@/components/booking-modal";
@@ -25,10 +25,10 @@ export default function PortfolioPage() {
         {/* Hero */}
         <header className="text-center mb-14">
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-3">
-            Portfolio
+            Products built. Problems solved.
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Full-stack applications, microservices, and dashboards - from pharma operations and AI agents to marketplaces and fintech.
+            A selection of my work across AI automation, real estate, healthcare, and marketplaces. Explore the interfaces, engineering decisions, and results behind each product.
           </p>
         </header>
 
@@ -37,6 +37,7 @@ export default function PortfolioPage() {
           {categories.map((category) => (
             <button
               key={category}
+              aria-pressed={activeFilter === category}
               onClick={() => setActiveFilter(category)}
               className={`px-5 py-2.5 rounded-full text-sm font-semibold transition ${
                 activeFilter === category
@@ -50,7 +51,7 @@ export default function PortfolioPage() {
         </div>
 
         {/* Projects grid - aligned cards, same structure */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-16">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-2 gap-6 sm:gap-8 mb-16">
           {filteredProjects.map((project, index) => (
             <motion.article
               key={project.slug}
@@ -63,15 +64,7 @@ export default function PortfolioPage() {
                 href={`/portfolio/${project.slug}`}
                 className="flex flex-col h-full bg-white border border-gray-200 rounded-xl overflow-hidden hover:border-orange-300 hover:shadow-lg transition-all duration-200 group"
               >
-                <div className="relative aspect-[16/10] bg-gray-100 overflow-hidden">
-                  <Image
-                    src={project.image}
-                    alt={project.title}
-                    fill
-                    className="object-cover group-hover:scale-[1.03] transition-transform duration-300"
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  />
-                </div>
+                <ProjectPreview project={project} />
                 <div className="p-5 sm:p-6 flex flex-col flex-1">
                   <span className="inline-block px-2.5 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-semibold mb-3 w-fit">
                     {project.category}

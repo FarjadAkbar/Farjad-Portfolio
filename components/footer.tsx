@@ -4,8 +4,11 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { links } from "@/lib/data";
 import BookingModal from "@/components/booking-modal";
-import { FaLinkedin, FaGithubSquare } from "react-icons/fa";
-import { BsInstagram } from "react-icons/bs";
+import Image from "next/image";
+import NavigationIcon from "./navigation-icons";
+import SocialLinks from "./social-links";
+import { HiOutlineCalendar, HiOutlineMail, HiOutlineCode, HiOutlineSparkles, HiOutlineChartBar, HiOutlineSearch, HiOutlineGlobe } from "react-icons/hi";
+import { FaWhatsapp } from "react-icons/fa";
 
 export default function Footer() {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
@@ -17,6 +20,7 @@ export default function Footer() {
           {/* Brand Column */}
           <div className="md:col-span-2">
             <Link href="/" className="flex items-center gap-2 mb-4">
+              <Image src="/favicon.png" alt="" width={36} height={36} />
               <span className="text-2xl font-bold">Farjad</span>
             </Link>
             <p className="text-gray-400 text-sm mb-6 leading-relaxed">
@@ -33,8 +37,9 @@ export default function Footer() {
                 <li key={link.hash}>
                   <Link
                     href={link.hash}
-                    className="text-gray-400 hover:text-orange-500 transition text-sm"
+                    className="inline-flex items-center gap-2 text-gray-400 hover:text-orange-500 transition text-sm"
                   >
+                    <NavigationIcon href={link.hash} />
                     {link.name}
                   </Link>
                 </li>
@@ -46,11 +51,15 @@ export default function Footer() {
           <div>
             <h4 className="font-semibold mb-4 text-white">Services</h4>
             <ul className="space-y-2 text-gray-400 text-sm">
-              <li>Website Development</li>
-              <li>AI Integration</li>
-              <li>Dashboard Design</li>
-              <li>SEO Optimization</li>
-              <li>Full-Stack Development</li>
+              {[
+                { label: "Website Development", Icon: HiOutlineGlobe },
+                { label: "AI Integration", Icon: HiOutlineSparkles },
+                { label: "Dashboard Design", Icon: HiOutlineChartBar },
+                { label: "SEO Optimization", Icon: HiOutlineSearch },
+                { label: "Full-Stack Development", Icon: HiOutlineCode },
+              ].map(({ label, Icon }) => (
+                <li key={label} className="flex items-center gap-2"><Icon aria-hidden="true" className="h-4 w-4 shrink-0 text-gray-500" />{label}</li>
+              ))}
             </ul>
           </div>
 
@@ -61,14 +70,14 @@ export default function Footer() {
               <li>
                 <button
                   onClick={() => setIsBookingModalOpen(true)}
-                  className="hover:text-orange-500 transition text-left"
+                  className="inline-flex items-center gap-2 hover:text-orange-500 transition text-left"
                 >
-                  Book a Call
+                  <HiOutlineCalendar aria-hidden="true" className="h-4 w-4" /> Book a Call
                 </button>
               </li>
               <li>
-                <a href="mailto:farjadakbar4@gmail.com" className="hover:text-orange-500 transition">
-                  Email Me
+                <a href="mailto:farjadakbar4@gmail.com" className="inline-flex items-center gap-2 hover:text-orange-500 transition">
+                  <HiOutlineMail aria-hidden="true" className="h-4 w-4" /> Email Me
                 </a>
               </li>
               <li>
@@ -76,9 +85,9 @@ export default function Footer() {
                   href="https://wa.me/+923312740314" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="hover:text-orange-500 transition"
+                  className="inline-flex items-center gap-2 hover:text-orange-500 transition"
                 >
-                  WhatsApp
+                  <FaWhatsapp aria-hidden="true" className="h-4 w-4" /> WhatsApp
                 </a>
               </li>
             </ul>
@@ -91,26 +100,7 @@ export default function Footer() {
             <p className="text-gray-400 text-sm text-center md:text-left">
               &copy; {new Date().getFullYear()} Farjad. All rights reserved.
             </p>
-            <div className="flex items-center gap-4">
-              <a
-                href="https://linkedin.com/in/farjad-akbar"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-gray-400 hover:text-orange-500 transition"
-                aria-label="LinkedIn"
-              >
-                <FaLinkedin className="w-5 h-5" />
-              </a>
-              <a
-                href="http://github.com/FarjadAkbar"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-gray-400 hover:text-orange-500 transition"
-                aria-label="GitHub"
-              >
-                <FaGithubSquare className="w-5 h-5" />
-              </a>
-            </div>
+            <SocialLinks dark />
           </div>
         </div>
       </div>
